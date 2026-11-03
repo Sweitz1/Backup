@@ -202,3 +202,43 @@ describe("web_search", () => {
     expect(r.label).toBe("Searching “ollama”");
   });
 });
+
+describe("approvals", async () => {
+  const { waitForApproval, decide, cancelRun, pendingCount } = await import("@/lib/tools/approvals");
+  const { prepareTool, isPrepared } = await import("@/lib/tools/registry");
+
+  it("resolves with the owner's decision", async () => {
+    const p = waitForApproval("me@x.com", "run-1", 0);
+    expect(decide("me@x.com", "run-1", 0, true)).toBe(true);
+    await expect(p).resolves.toBe(true);
+    expect(pendingCount()).toBe(0);
+  });
+
+  it("ignores decisions from another user", async () => {
+    const p = waitForApproval("me@x.com", "run-2", 0, 50);
+    expect(decide("other@x.com", "run-2", 0, true)).toBe(false);
+    await expect(p).resolves.toBe(false); // timed out → denied
+  });
+
+  it("denies everything pending when the reply is stopped", async () => {
+    const a = waitForApproval("me@x.com", "run-3", 0);
+    const b = waitForApproval("me@x.com", "run-3", 1);
+    const other = waitForApproval("me@x.com", "run-4", 0);
+    cancelRun("run-3");
+    await expect(Promise.all([a, b])).resolves.toEqual([false, false]);
+    expect(decide("me@x.com", "run-4", 0, true)).toBe(true);
+    await expect(other).resolves.toBe(true);
+  });
+
+  it("flags only off-machine tools as external, with the exact detail", () => {
+    process.env.ENABLE_WEB_FETCH = "true";
+    process.env.SEARXNG_URL ??= "http://127.0.0.1:8080";
+    const tools = toolsFor(["web_fetch", "web_search", "calculator"]);
+    const fetchCall = prepareTool(tools, "web_fetch", { url: "https://example.com/a?b=1" });
+    const searchCall = prepareTool(tools, "web_search", { query: "local llm", time_range: "week" });
+    const calcCall = prepareTool(tools, "calculator", { expression: "1+1" });
+    expect(isPrepared(fetchCall) && fetchCall.external && fetchCall.detail).toBe("https://example.com/a?b=1");
+    expect(isPrepared(searchCall) && searchCall.detail).toBe("Search: local llm (past week)");
+    expect(isPrepared(calcCall) && calcCall.external).toBe(false);
+  });
+});

@@ -4,10 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import SkillPicker from "./SkillPicker";
 import type { StreamEvent } from "@/lib/llm/events";
 
-type ToolStep = { id: number; label: string; status: "start" | "done" | "error" };
+type ToolStep = {
+  id: number;
+  label: string;
+  status: "approval" | "start" | "done" | "error" | "denied";
+  detail?: string; // what will be sent, shown while waiting for approval
+  runId?: string;
+};
 type Msg = { role: "user" | "assistant"; content: string; tools?: ToolStep[] };
 
 const HISTORY_KEY = "private-llm:history"; // chat history lives only in this browser
+const CONFIRM_KEY = "private-llm:confirm-external";
+
+const STATUS_ICON: Record<ToolStep["status"], string> = {
+  approval: "⏸",
+  start: "⏳",
+  done: "✓",
+  error: "⚠",
+  denied: "✕",
+};
 
 function loadHistory(): Msg[] {
   try {
@@ -33,10 +48,20 @@ export default function Chat() {
   const [skill, setSkill] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirmExternal, setConfirmExternal] = useState(true);
+  const [deciding, setDeciding] = useState<Set<string>>(new Set());
   const abortRef = useRef<AbortController | null>(null);
+  const confirmRef = useRef(true); // read inside the stream loop, which outlives renders
 
   useEffect(() => {
     setMessages(loadHistory());
+    try {
+      const stored = localStorage.getItem(CONFIRM_KEY) !== "false";
+      setConfirmExternal(stored);
+      confirmRef.current = stored;
+    } catch {
+      /* default: ask */
+    }
     fetch("/api/models")
       .then((r) => r.json())
       .then((d) => {
@@ -50,6 +75,34 @@ export default function Chat() {
   useEffect(() => {
     if (!busy) saveHistory(messages);
   }, [messages, busy]);
+
+  function updateConfirm(value: boolean) {
+    setConfirmExternal(value);
+    confirmRef.current = value;
+    try {
+      localStorage.setItem(CONFIRM_KEY, String(value));
+    } catch {
+      /* in-memory only */
+    }
+  }
+
+  /** Allow or deny a paused tool call. "always" also stops asking for future requests. */
+  async function decide(step: ToolStep, allow: boolean, always = false) {
+    if (!step.runId) return;
+    const key = `${step.runId}:${step.id}`;
+    setDeciding((s) => new Set(s).add(key));
+    if (always) updateConfirm(false);
+    try {
+      const res = await fetch("/api/chat/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId: step.runId, id: step.id, allow }),
+      });
+      if (!res.ok) setError((await res.json().catch(() => null))?.error ?? `Error ${res.status}`);
+    } catch {
+      setError("Couldn't send your answer to the server.");
+    }
+  }
 
   async function send(e: { preventDefault(): void }) {
     e.preventDefault();
@@ -72,6 +125,7 @@ export default function Chat() {
           messages: next.map(({ role, content }) => ({ role, content })),
           model: model || undefined,
           skill: skill || undefined,
+          confirmExternal,
         }),
         signal: controller.signal,
       });
@@ -87,9 +141,15 @@ export default function Chat() {
         if (ev.type === "text") reply += ev.text;
         else if (ev.type === "error") setError(ev.message);
         else {
+          const update: ToolStep =
+            ev.type === "approval"
+              ? { id: ev.id, label: ev.label, status: "approval", detail: ev.detail, runId: ev.runId }
+              : { id: ev.id, label: ev.label, status: ev.status };
           const existing = steps.find((s) => s.id === ev.id);
-          if (existing) Object.assign(existing, { label: ev.label, status: ev.status });
-          else steps.push({ id: ev.id, label: ev.label, status: ev.status });
+          if (existing) Object.assign(existing, update, ev.type === "approval" ? {} : { detail: undefined });
+          else steps.push(update);
+          // Turned off mid-reply (e.g. "Always allow"): approve the rest automatically.
+          if (ev.type === "approval" && !confirmRef.current) void decide(update, true);
         }
       };
       for (;;) {
@@ -137,6 +197,10 @@ export default function Chat() {
           ))}
         </select>
         <SkillPicker value={skill} onChange={setSkill} />
+        <label className="flex items-center gap-1 text-[var(--muted)]" title="Ask before searching the web or opening a page">
+          <input type="checkbox" checked={confirmExternal} onChange={(e) => updateConfirm(e.target.checked)} />
+          Ask before web access
+        </label>
         <button
           type="button"
           className="ml-auto text-[var(--muted)] underline"
@@ -159,11 +223,48 @@ export default function Chat() {
           >
             {m.tools && (
               <ul className="mb-2 space-y-0.5 text-xs text-[var(--muted)]">
-                {m.tools.map((t) => (
-                  <li key={t.id}>
-                    {t.status === "start" ? "⏳" : t.status === "done" ? "✓" : "⚠"} {t.label}
-                  </li>
-                ))}
+                {m.tools.map((t) => {
+                  const waiting = t.status === "approval" && busy && i === messages.length - 1;
+                  const locked = deciding.has(`${t.runId}:${t.id}`);
+                  return (
+                    <li key={t.id}>
+                      {STATUS_ICON[t.status]} {t.label}
+                      {t.status === "denied" && " (declined)"}
+                      {waiting && (
+                        <div className="mt-1 rounded-md border border-[var(--border)] p-2 text-[var(--fg)]">
+                          <p className="mb-1">Allow this request to leave your machine?</p>
+                          <code className="mb-2 block break-all rounded bg-[var(--bg)] px-1.5 py-1">{t.detail}</code>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={locked}
+                              className="rounded bg-[var(--accent)] px-3 py-1 text-white disabled:opacity-50"
+                              onClick={() => decide(t, true)}
+                            >
+                              Allow
+                            </button>
+                            <button
+                              type="button"
+                              disabled={locked}
+                              className="rounded border border-[var(--border)] px-3 py-1 disabled:opacity-50"
+                              onClick={() => decide(t, false)}
+                            >
+                              Deny
+                            </button>
+                            <button
+                              type="button"
+                              disabled={locked}
+                              className="px-1 underline disabled:opacity-50"
+                              onClick={() => decide(t, true, true)}
+                            >
+                              Always allow
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
             {m.content || (busy && i === messages.length - 1 ? "…" : "")}

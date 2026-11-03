@@ -72,6 +72,8 @@ export const webSearch: ToolDef<z.infer<typeof Args>> = {
     "Search the web and get a list of results (title, URL, snippet). Use it to find pages, then read the best ones with web_fetch. Use time_range for recent news.",
   schema: Args,
   enabled: () => searxngUrl() !== undefined,
+  external: true,
+  detail: ({ query, time_range }) => `Search: ${query}${time_range ? ` (past ${time_range})` : ""}`,
   describe: ({ query }) => `Searching “${query.length > 50 ? query.slice(0, 50) + "…" : query}”`,
   async run({ query, max_results, time_range }) {
     const base = searxngUrl();

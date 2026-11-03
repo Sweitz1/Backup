@@ -112,6 +112,8 @@ export const webFetch: ToolDef<z.infer<typeof Args>> = {
     "Download a public web page (http/https) and return its readable text. Use for current information or when the user gives a link.",
   schema: Args,
   enabled: () => process.env.ENABLE_WEB_FETCH === "true",
+  external: true,
+  detail: ({ url }) => url,
   describe: ({ url }) => {
     try {
       return `Fetching ${new URL(url).hostname}`;

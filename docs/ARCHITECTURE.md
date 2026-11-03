@@ -23,15 +23,30 @@ Browser ──(Google OAuth)──▶ Next.js app ──(localhost)──▶ Oll
 ## Tool loop
 
 ```
-model ──tool_calls──▶ runTool() ──result──▶ model ──…──▶ final answer
+model ──tool_calls──▶ prepareTool() ──(external? wait for Allow/Deny)──▶ executeTool() ──result──▶ model ──…──▶ answer
 ```
 
 - Only tools the active skill lists, and that are switched on, are offered to the model.
-- `runTool` refuses any tool that wasn't offered, validates arguments with zod, and returns errors
-  to the model as text so it can recover. Output is capped at 20,000 characters.
+- `prepareTool` refuses any tool that wasn't offered and validates arguments with zod; problems go
+  back to the model as text so it can recover. Output is capped at 20,000 characters.
 - At most 6 model ↔ tool rounds per reply. Pressing Stop aborts the current model call.
 - Tool results are added to the conversation sent to the model but aren't returned to the browser
   in full; the UI only shows a one-line label per call.
+
+### Approval for off-machine requests
+
+Tools marked `external` (`web_search`, `web_fetch`) pause before running when "Ask before web
+access" is on (the default; the toggle is remembered per browser):
+
+1. The chat stream sends an `approval` event with the exact URL or search query.
+2. The browser shows Allow / Deny / Always allow and posts the choice to `/api/chat/approve`.
+3. `src/lib/tools/approvals.ts` holds the paused call in memory, keyed by reply and call ID and
+   tied to the signed-in user, so only that user can answer it. It's denied automatically after
+   2 minutes, or when the user presses Stop.
+4. A denied call tells the model the user declined, so it continues without it.
+
+"Always allow" turns the toggle off and approves the remaining calls in the current reply.
+The pending store is per process, so run a single app instance (the normal self-hosted setup).
 
 ### Tool safety
 
@@ -55,7 +70,6 @@ model ──tool_calls──▶ runTool() ──result──▶ model ──…�
 
 ## Planned next steps
 
-- Per-call approval in the UI for tools that reach outside the machine
 - Optional encrypted server-side history for multi-device use
 - Markdown rendering and code highlighting in replies
 - Image/file attachments for multimodal models

@@ -33,11 +33,22 @@ export function toOllamaTools(tools: ToolDef<any>[]): OllamaTool[] {
   });
 }
 
+/** A validated tool call, ready to approve and run. */
+export type PreparedCall = {
+  ok: true;
+  tool: ToolDef<any>;
+  args: unknown;
+  label: string;
+  /** What will be sent off the machine, if anything. */
+  detail: string;
+  external: boolean;
+};
+
 /**
- * Runs one tool call from the model. Never throws: errors go back to the model as text
- * so it can correct itself. Only tools offered to the model can run.
+ * Checks a tool call from the model: the tool must have been offered and the arguments
+ * must validate. Problems come back as a ToolResult so they can be returned to the model.
  */
-export async function runTool(available: ToolDef<any>[], name: string, rawArgs: unknown): Promise<ToolResult> {
+export function prepareTool(available: ToolDef<any>[], name: string, rawArgs: unknown): PreparedCall | ToolResult {
   const tool = available.find((t) => t.name === name);
   if (!tool) return { ok: false, label: `Unknown tool ${name}`, output: `Error: tool "${name}" is not available.` };
 
@@ -49,16 +60,37 @@ export async function runTool(available: ToolDef<any>[], name: string, rawArgs: 
       output: `Error: invalid arguments for ${name}: ${parsed.error.issues.map((i) => `${i.path.join(".") || "args"} ${i.message}`).join("; ")}`,
     };
   }
-
   const label = tool.describe(parsed.data);
+  return {
+    ok: true,
+    tool,
+    args: parsed.data,
+    label,
+    detail: tool.detail?.(parsed.data) ?? label,
+    external: tool.external === true,
+  };
+}
+
+export function isPrepared(p: PreparedCall | ToolResult): p is PreparedCall {
+  return p.ok && "tool" in p;
+}
+
+/** Runs a prepared call. Never throws; errors go back to the model as text. */
+export async function executeTool(call: PreparedCall): Promise<ToolResult> {
   try {
-    const out = await tool.run(parsed.data);
+    const out = await call.tool.run(call.args);
     return {
       ok: true,
-      label,
+      label: call.label,
       output: out.length > MAX_OUTPUT_CHARS ? out.slice(0, MAX_OUTPUT_CHARS) + "\n[output truncated]" : out,
     };
   } catch (err) {
-    return { ok: false, label, output: `Error: ${(err as Error).message}` };
+    return { ok: false, label: call.label, output: `Error: ${(err as Error).message}` };
   }
+}
+
+/** Validate and run in one step (no approval). */
+export async function runTool(available: ToolDef<any>[], name: string, rawArgs: unknown): Promise<ToolResult> {
+  const prepared = prepareTool(available, name, rawArgs);
+  return isPrepared(prepared) ? executeTool(prepared) : prepared;
 }

@@ -5,7 +5,8 @@ import { ollama, DEFAULT_MODEL } from "@/lib/llm/ollama";
 import type { StreamEvent } from "@/lib/llm/events";
 import { getSkill } from "@/lib/skills/loader";
 import { buildMessages } from "@/lib/skills/prompt";
-import { runTool, toOllamaTools, toolsFor } from "@/lib/tools/registry";
+import { cancelRun, waitForApproval } from "@/lib/tools/approvals";
+import { executeTool, isPrepared, prepareTool, toOllamaTools, toolsFor } from "@/lib/tools/registry";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ const Body = z.object({
     .max(200),
   model: z.string().max(200).optional(),
   skill: z.string().max(100).optional(),
+  /** Ask the user before any tool sends data off this machine. */
+  confirmExternal: z.boolean().default(true),
 });
 
 /**
@@ -31,12 +34,15 @@ const Body = z.object({
  * has tools, runs the model ↔ tool loop on the server. Nothing is logged or stored.
  */
 export async function POST(req: Request) {
-  if (!(await auth())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const owner = session.user?.email ?? "unknown";
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Invalid request" }, { status: 400 });
 
-  const { messages, model, skill: skillName } = parsed.data;
+  const { messages, model, skill: skillName, confirmExternal } = parsed.data;
+  const runId = crypto.randomUUID();
   const skill = skillName ? await getSkill(skillName) : undefined;
   if (skillName && !skill) return Response.json({ error: "Unknown skill" }, { status: 400 });
 
@@ -87,21 +93,44 @@ export async function POST(req: Request) {
           convo.push({ role: "assistant", content, tool_calls: calls });
           for (const call of calls) {
             const id = toolId++;
-            send({ type: "tool", id, status: "start", label: call.function.name });
-            const result = await runTool(tools, call.function.name, call.function.arguments);
+            const name = call.function.name;
+            const reply = (content: string) => convo.push({ role: "tool", content, tool_name: name } as Message);
+
+            const prepared = prepareTool(tools, name, call.function.arguments);
+            if (!isPrepared(prepared)) {
+              send({ type: "tool", id, status: "error", label: prepared.label });
+              reply(prepared.output);
+              continue;
+            }
+
+            if (prepared.external && confirmExternal) {
+              send({ type: "approval", id, runId, label: prepared.label, detail: prepared.detail });
+              const allowed = await waitForApproval(owner, runId, id);
+              if (cancelled) break;
+              if (!allowed) {
+                send({ type: "tool", id, status: "denied", label: prepared.label });
+                reply("The user declined this request. Don't retry it; continue without it or ask the user how to proceed.");
+                continue;
+              }
+            }
+
+            send({ type: "tool", id, status: "start", label: prepared.label });
+            const result = await executeTool(prepared);
             if (cancelled) break;
             send({ type: "tool", id, status: result.ok ? "done" : "error", label: result.label });
-            convo.push({ role: "tool", content: result.output, tool_name: call.function.name } as Message);
+            reply(result.output);
           }
           if (content) send({ type: "text", text: "\n\n" });
         }
       } catch (err) {
         send({ type: "error", message: `Model server error: ${(err as Error).message}` });
       }
+      cancelRun(runId); // nothing left waiting once the reply ends
       if (!cancelled) controller.close();
     },
     cancel() {
       cancelled = true;
+      cancelRun(runId);
       current?.abort(); // stop generation when the user hits Stop or closes the tab
     },
   });

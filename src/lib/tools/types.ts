@@ -12,6 +12,13 @@ export interface ToolDef<A = unknown> {
   enabled?: () => boolean;
   /** Short label shown in the chat UI, e.g. "Fetching example.com". */
   describe: (args: A) => string;
+  /**
+   * True if the tool sends data off this machine. Such calls can require the user's
+   * approval in the chat before they run.
+   */
+  external?: boolean;
+  /** Exactly what will be sent, shown when asking for approval (full URL, search query…). */
+  detail?: (args: A) => string;
   /** Returns text for the model. Throw to report an error back to it. */
   run: (args: A) => Promise<string>;
 }

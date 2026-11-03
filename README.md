@@ -5,7 +5,7 @@ A private, self-hosted chat app for open-weight language models.
 - **Local models** — runs any model you pull into [Ollama](https://ollama.com) on your own machine; prompts never leave it.
 - **Google sign-in** — only the Google accounts you list in `ALLOWED_EMAILS` can get in.
 - **Skills** — drop a `SKILL.md` into `skills/` to add a reusable mode (see [skills/README.md](skills/README.md)).
-- **Tools** — skills can let the model search the web (via your own SearXNG), read web pages, read files from one shared folder, and do exact math.
+- **Tools** — skills can let the model search the web (via your own SearXNG), read web pages, read files from one shared folder, and do exact math. By default the chat asks you before anything leaves your machine, showing the exact URL or search query.
 - **No server-side history** — conversations are kept in your browser only.
 
 ## Quick start
