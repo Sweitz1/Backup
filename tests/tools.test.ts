@@ -6,7 +6,8 @@ import { evaluate } from "@/lib/tools/calculator";
 import { assertPublicUrl, isBlockedAddress } from "@/lib/tools/net-safety";
 import { htmlToText } from "@/lib/tools/web-fetch";
 import { listFiles, readFile } from "@/lib/tools/files";
-import { runTool, toOllamaTools, toolsFor } from "@/lib/tools/registry";
+import { isPrepared, prepareTool, runTool, toOllamaTools, toolsFor } from "@/lib/tools/registry";
+import { cancelRun, decide, pendingCount, waitForApproval } from "@/lib/tools/approvals";
 import { cleanResults, webSearch } from "@/lib/tools/web-search";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
@@ -203,9 +204,7 @@ describe("web_search", () => {
   });
 });
 
-describe("approvals", async () => {
-  const { waitForApproval, decide, cancelRun, pendingCount } = await import("@/lib/tools/approvals");
-  const { prepareTool, isPrepared } = await import("@/lib/tools/registry");
+describe("approvals", () => {
 
   it("resolves with the owner's decision", async () => {
     const p = waitForApproval("me@x.com", "run-1", 0);
