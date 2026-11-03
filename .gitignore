@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+coverage/
+*.log
+.DS_Store
+
+# secrets
+.env
+.env.local
+.env.*.local
