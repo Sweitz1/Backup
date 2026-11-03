@@ -5,6 +5,9 @@ coverage/
 *.log
 .DS_Store
 
+# your private files for the files tools
+data/
+
 # secrets
 .env
 .env.local

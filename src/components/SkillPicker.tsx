@@ -26,7 +26,7 @@ export default function SkillPicker({
       className="rounded border border-[var(--border)] bg-[var(--panel)] px-2 py-1"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      title={active?.description}
+      title={active ? `${active.description}${active.tools?.length ? `\nTools: ${active.tools.join(", ")}` : ""}` : undefined}
       aria-label="Skill"
     >
       <option value="">No skill</option>

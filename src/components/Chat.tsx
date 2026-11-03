@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import SkillPicker from "./SkillPicker";
+import type { StreamEvent } from "@/lib/llm/events";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type ToolStep = { id: number; label: string; status: "start" | "done" | "error" };
+type Msg = { role: "user" | "assistant"; content: string; tools?: ToolStep[] };
 
 const HISTORY_KEY = "private-llm:history"; // chat history lives only in this browser
 
@@ -66,7 +68,11 @@ export default function Chat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, model: model || undefined, skill: skill || undefined }),
+        body: JSON.stringify({
+          messages: next.map(({ role, content }) => ({ role, content })),
+          model: model || undefined,
+          skill: skill || undefined,
+        }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -75,11 +81,35 @@ export default function Chat() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = "";
+      let buffer = "";
+      const steps: ToolStep[] = [];
+      const handle = (ev: StreamEvent) => {
+        if (ev.type === "text") reply += ev.text;
+        else if (ev.type === "error") setError(ev.message);
+        else {
+          const existing = steps.find((s) => s.id === ev.id);
+          if (existing) Object.assign(existing, { label: ev.label, status: ev.status });
+          else steps.push({ id: ev.id, label: ev.label, status: ev.status });
+        }
+      };
       for (;;) {
         const { done, value } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done });
+        const lines = buffer.split("\n");
+        buffer = done ? "" : (lines.pop() ?? "");
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            handle(JSON.parse(line) as StreamEvent);
+          } catch {
+            /* ignore a malformed line */
+          }
+        }
+        setMessages([
+          ...next,
+          { role: "assistant", content: reply.trim(), tools: steps.length ? steps.map((s) => ({ ...s })) : undefined },
+        ]);
         if (done) break;
-        reply += decoder.decode(value, { stream: true });
-        setMessages([...next, { role: "assistant", content: reply }]);
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
@@ -127,6 +157,15 @@ export default function Chat() {
                 : "max-w-[85%] whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-[var(--panel)] px-3 py-2"
             }
           >
+            {m.tools && (
+              <ul className="mb-2 space-y-0.5 text-xs text-[var(--muted)]">
+                {m.tools.map((t) => (
+                  <li key={t.id}>
+                    {t.status === "start" ? "⏳" : t.status === "done" ? "✓" : "⚠"} {t.label}
+                  </li>
+                ))}
+              </ul>
+            )}
             {m.content || (busy && i === messages.length - 1 ? "…" : "")}
           </li>
         ))}

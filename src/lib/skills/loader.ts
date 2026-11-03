@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
+import { isKnownTool } from "@/lib/tools/registry";
 import { SkillMeta, type Skill } from "./types";
 
 export function skillsDir(): string {
@@ -29,6 +30,8 @@ export async function loadSkills(dir = skillsDir()): Promise<Skill[]> {
       if (meta.name !== entry.name) {
         throw new Error(`name "${meta.name}" must match folder "${entry.name}"`);
       }
+      const unknown = (meta.tools ?? []).filter((t) => !isKnownTool(t));
+      if (unknown.length) throw new Error(`unknown tool(s): ${unknown.join(", ")}`);
       skills.push({ ...meta, instructions: content.trim() });
     } catch (err) {
       console.warn(`[skills] skipping ${file}: ${(err as Error).message}`);

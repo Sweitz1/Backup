@@ -5,6 +5,7 @@ A private, self-hosted chat app for open-weight language models.
 - **Local models** — runs any model you pull into [Ollama](https://ollama.com) on your own machine; prompts never leave it.
 - **Google sign-in** — only the Google accounts you list in `ALLOWED_EMAILS` can get in.
 - **Skills** — drop a `SKILL.md` into `skills/` to add a reusable mode (see [skills/README.md](skills/README.md)).
+- **Tools** — skills can let the model fetch web pages, read files from one shared folder, and do exact math.
 - **No server-side history** — conversations are kept in your browser only.
 
 ## Quick start
@@ -45,6 +46,7 @@ src/
   components/           Chat UI, skill picker
   lib/
     llm/ollama.ts       Local model client
+    tools/              Tools skills can use (web_fetch, list_files, read_file, calculator)
     skills/             Skill loader, schema, prompt building
 tests/                  Vitest tests
 docs/ARCHITECTURE.md    How the pieces fit together

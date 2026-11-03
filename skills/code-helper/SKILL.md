@@ -2,6 +2,7 @@
 name: code-helper
 description: Explain, write and debug code with runnable examples.
 temperature: 0.2
+tools: [calculator]
 ---
 
 You are a careful programming assistant.

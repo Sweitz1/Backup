@@ -17,7 +17,17 @@ async function tempSkills(files: Record<string, string>) {
 describe("skills loader", () => {
   it("loads the bundled skills", async () => {
     const names = (await loadSkills(path.resolve("skills"))).map((s) => s.name);
-    expect(names).toEqual(["code-helper", "summarize"]);
+    expect(names).toEqual(["code-helper", "files-assistant", "researcher", "summarize"]);
+  });
+
+  it("skips skills that ask for unknown tools", async () => {
+    const dir = await tempSkills({
+      bad: "---\nname: bad\ndescription: x\ntools: [rm_rf]\n---\nx",
+      ok: "---\nname: ok\ndescription: x\ntools: [calculator]\n---\nx",
+    });
+    const skills = await loadSkills(dir);
+    expect(skills.map((s) => s.name)).toEqual(["ok"]);
+    expect(skills[0].tools).toEqual(["calculator"]);
   });
 
   it("skips invalid or mismatched skills", async () => {
