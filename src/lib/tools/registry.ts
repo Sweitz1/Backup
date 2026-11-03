@@ -3,10 +3,11 @@ import type { Tool as OllamaTool } from "ollama";
 import { calculator } from "./calculator";
 import { listFiles, readFile } from "./files";
 import { webFetch } from "./web-fetch";
+import { webSearch } from "./web-search";
 import type { ToolDef, ToolResult } from "./types";
 
 // Register new tools here.
-const ALL = [webFetch, listFiles, readFile, calculator] as ToolDef<any>[];
+const ALL = [webSearch, webFetch, listFiles, readFile, calculator] as ToolDef<any>[];
 
 const MAX_OUTPUT_CHARS = 20_000;
 

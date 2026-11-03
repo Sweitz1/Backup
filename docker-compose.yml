@@ -1,5 +1,5 @@
-# Runs the local model server. The web app runs with `npm run dev` / `npm start`.
-# Bound to localhost only so the model API is never exposed to your network.
+# Runs the local model server and private search engine. The web app runs with
+# `npm run dev` / `npm start`. Both are bound to localhost only, never your network.
 services:
   ollama:
     image: ollama/ollama:latest
@@ -16,6 +16,19 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
+
+  # Private metasearch engine for the web_search tool. Queries go out from here to
+  # the search engines; nothing is tied to a Google or Bing account.
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      # Generate one with: openssl rand -hex 32  (put it in a .env file next to this one)
+      - SEARXNG_SECRET=${SEARXNG_SECRET:?set SEARXNG_SECRET in .env}
+    restart: unless-stopped
 
 volumes:
   ollama:

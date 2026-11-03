@@ -27,6 +27,7 @@ Instructions for the model go here, in plain Markdown.
 
 | Tool         | What it does                                              | Limits                                                                                   |
 | ------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `web_search` | Searches the web through your self-hosted SearXNG; returns titles, URLs, snippets | Off unless `SEARXNG_URL` is set. 1–10 results; optional `time_range` (day/week/month/year) |
 | `web_fetch`  | Downloads a public web page and returns its text          | Off unless `ENABLE_WEB_FETCH=true`. Can't reach this machine or your network. 10 s timeout, 1 MB download cap, text-type pages only |
 | `list_files` | Lists the shared files folder                              | Only `FILES_DIR` (default `data/files/`); symlinks out of it are refused                  |
 | `read_file`  | Reads a text file from the shared files folder             | Same folder rule; 200 KB cap; binary files refused                                        |

@@ -1,7 +1,8 @@
 # Architecture
 
 ```
-Browser ──(Google OAuth)──▶ Next.js app ──(HTTP, localhost)──▶ Ollama ──▶ model weights on disk
+Browser ──(Google OAuth)──▶ Next.js app ──(localhost)──▶ Ollama ──▶ model weights on disk
+                                 └──(localhost)──▶ SearXNG ──▶ public search engines
    │                            │
    └─ chat history in           └─ reads skills/*/SKILL.md on each request
       localStorage only
@@ -34,6 +35,10 @@ model ──tool_calls──▶ runTool() ──result──▶ model ──…�
 
 ### Tool safety
 
+- **web_search** only talks to the SearXNG instance in `SEARXNG_URL` (yours, started by
+  docker-compose and bound to localhost). SearXNG forwards the query to public engines without
+  cookies or an account. Result URLs are filtered to http/https and de-duplicated; the model then
+  reads pages through `web_fetch`, which applies the network rules below.
 - **web_fetch** checks the URL (http/https, no credentials, no internal IP literals), then checks
   every DNS answer at connect time, so a hostname that resolves to `127.0.0.1`, your LAN or a
   cloud metadata address is refused even after redirects. It's off unless `ENABLE_WEB_FETCH=true`
@@ -45,11 +50,11 @@ model ──tool_calls──▶ runTool() ──result──▶ model ──…�
 
 - Ollama is bound to `127.0.0.1` in `docker-compose.yml`, so the model API isn't reachable from the network.
 - The server doesn't log or store prompts or replies.
-- The only third parties involved are Google (sign-in) and, if you enable `web_fetch`, the sites the model fetches.
+- The only third parties involved are Google (sign-in) and, when web tools are on, the search
+  engines SearXNG queries and the sites the model fetches.
 
 ## Planned next steps
 
-- Web search tool (e.g. a self-hosted SearXNG instance) to pair with `web_fetch`
 - Per-call approval in the UI for tools that reach outside the machine
 - Optional encrypted server-side history for multi-device use
 - Markdown rendering and code highlighting in replies

@@ -7,6 +7,9 @@ import { assertPublicUrl, isBlockedAddress } from "@/lib/tools/net-safety";
 import { htmlToText } from "@/lib/tools/web-fetch";
 import { listFiles, readFile } from "@/lib/tools/files";
 import { runTool, toOllamaTools, toolsFor } from "@/lib/tools/registry";
+import { cleanResults, webSearch } from "@/lib/tools/web-search";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 
 describe("calculator", () => {
   it.each([
@@ -129,5 +132,73 @@ describe("runTool", () => {
     const [def] = toOllamaTools(tools);
     expect(def.function.name).toBe("calculator");
     expect(def.function.parameters).toMatchObject({ type: "object", required: ["expression"] });
+  });
+});
+
+describe("web_search", () => {
+  let server: http.Server;
+  let lastQuery: URLSearchParams | undefined;
+  let status = 200;
+  const prev = process.env.SEARXNG_URL;
+
+  beforeAll(async () => {
+    server = http.createServer((req, res) => {
+      lastQuery = new URL(req.url ?? "/", "http://x").searchParams;
+      res.writeHead(status, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          results: [
+            { title: "Ollama", url: "https://ollama.com/", content: "Get up and running with   models.", publishedDate: "2026-10-01T00:00:00" },
+            { title: "Dup", url: "https://ollama.com/", content: "same url" },
+            { title: "Bad", url: "javascript:alert(1)", content: "x" },
+            { title: "", url: "https://github.com/ollama/ollama", content: "" },
+          ],
+        }),
+      );
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    process.env.SEARXNG_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+    process.env.SEARXNG_URL = prev;
+  });
+
+  it("is off when SEARXNG_URL is unset", () => {
+    const url = process.env.SEARXNG_URL;
+    delete process.env.SEARXNG_URL;
+    expect(toolsFor(["web_search"])).toHaveLength(0);
+    process.env.SEARXNG_URL = url;
+    expect(toolsFor(["web_search"])).toHaveLength(1);
+  });
+
+  it("queries SearXNG as JSON and formats clean, de-duplicated results", async () => {
+    const out = await webSearch.run({ query: "ollama", max_results: 5, time_range: "week" });
+    expect(lastQuery?.get("q")).toBe("ollama");
+    expect(lastQuery?.get("format")).toBe("json");
+    expect(lastQuery?.get("time_range")).toBe("week");
+    expect(out).toContain("1. Ollama (2026-10-01)\n   https://ollama.com/\n   Get up and running with models.");
+    expect(out).toContain("2. github.com\n   https://github.com/ollama/ollama");
+    expect(out).not.toContain("javascript:");
+    expect(out).not.toContain("3.");
+  });
+
+  it("respects max_results", () => {
+    const raw = { results: Array.from({ length: 20 }, (_, i) => ({ title: `r${i}`, url: `https://e.com/${i}` })) };
+    expect(cleanResults(raw, 3)).toHaveLength(3);
+    expect(cleanResults({ nope: 1 }, 3)).toEqual([]);
+  });
+
+  it("explains a 403 (JSON format disabled)", async () => {
+    status = 403;
+    await expect(webSearch.run({ query: "x", max_results: 5 })).rejects.toThrow(/search.formats/);
+    status = 200;
+  });
+
+  it("goes through runTool with defaults filled in", async () => {
+    const r = await runTool(toolsFor(["web_search"]), "web_search", { query: "ollama" });
+    expect(r.ok).toBe(true);
+    expect(r.label).toBe("Searching “ollama”");
   });
 });
