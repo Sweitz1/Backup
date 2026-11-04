@@ -1,0 +1,81 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # No API key is baked into these builds (the repo is public); set it on the glasses with adb.
+      - name: Build debug APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name debug APK
+        run: |
+          mkdir -p dist
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          echo "APK_TAG=${VERSION}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/VeniceX3-${VERSION}-${GITHUB_SHA::7}-debug.apk"
+
+      - name: Upload debug APK (install this one)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VeniceX3-${{ env.APK_TAG }}-debug-apk
+          path: dist/*-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Minified with R8. Unsigned: sign it with your own key before distributing.
+      - name: Build release APK (unsigned)
+        id: release
+        continue-on-error: true
+        run: |
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "dist/VeniceX3-${APK_TAG}-release-unsigned.apk"
+
+      - name: Upload release APK (unsigned)
+        if: steps.release.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: VeniceX3-${{ env.APK_TAG }}-release-unsigned-apk
+          path: dist/*-release-unsigned.apk
+          retention-days: 30
