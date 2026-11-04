@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VeniceX3</string>
+
+    <string name="hint_idle">Tap: speak · Swipe: scroll · Long press: new chat · Triple tap: menu</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_listening">Listening… tap to send</string>
+    <string name="status_transcribing">Transcribing…</string>
+    <string name="status_thinking">Thinking…</string>
+    <string name="status_answering">Answering…</string>
+    <string name="status_no_key">No API key. Set it with adb (see README).</string>
+    <string name="status_no_mic">Microphone permission needed</string>
+
+    <string name="toast_new_chat">New chat</string>
+    <string name="toast_cancelled">Stopped</string>
+    <string name="toast_speech_on">Read aloud: on</string>
+    <string name="toast_speech_off">Read aloud: off</string>
+    <string name="toast_heard_nothing">Didn\'t catch that</string>
+
+    <string name="picker_title">Menu</string>
+    <string name="picker_read_aloud_on">Read answers aloud: ON</string>
+    <string name="picker_read_aloud_off">Read answers aloud: OFF</string>
+    <string name="picker_web_search">Venice web search: %1$s</string>
+    <string name="picker_hint">Swipe: move · Tap: select · Double tap: back</string>
+    <string name="picker_loading">Loading models…</string>
+</resources>
