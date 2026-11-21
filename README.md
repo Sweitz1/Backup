@@ -228,16 +228,9 @@ app/src/main/java/dev/sweitz/veniceglasses/
   data/VeniceClient.kt            Venice API: streaming chat, speech-to-text, model list
   data/SseParser.kt               Server-sent events parser for streamed replies
   data/ThinkFilter.kt             Strips <think>…</think> reasoning from streamed text
-  data/Conversation.kt            In-memory history and the glasses system prompt
   data/RequestLog.kt              Rolling 24 h CSV of request metadata
   data/Settings.kt                Private preferences (key, model, toggles, mature switches)
-  data/Character.kt               Character model + built-in assistant and companion
-  data/CharacterCard.kt           SillyTavern card reader (JSON V1/V2/V3, PNG tEXt/zTXt/iTXt)
   data/CharacterStore.kt          Loads cards and their avatar/video from the characters folder
-  data/PromptBuilder.kt           SillyTavern-style prompt assembly and {{char}}/{{user}} macros
-  data/ContentPolicy.kt           Mature-mode gating and the always-on minor safeguards
-  data/ImageIntent.kt             Detects "show me / draw / selfie" requests
-  data/CardStores.kt              Card store directory and link → download URL rules
   data/CardDownloader.kt          Downloads and imports a card from a link
   audio/VoiceRecorder.kt          Records questions as AAC .m4a
   audio/Speaker.kt                On-device text-to-speech
@@ -249,8 +242,19 @@ app/src/main/java/dev/sweitz/veniceglasses/
   ui/CreditsActivity.kt           Credits & licences screen (data/Credits.kt)
   ui/CardStoresActivity.kt        Card stores screen
   ui/ConfigActivity.kt            adb-only settings
+cards/                            Library dev.sweitz:venicex3-cards (see cards/README.md):
+  Character, CharacterCard        SillyTavern card model and reader (JSON V1/V2/V3, PNG chunks)
+  PromptBuilder, Conversation     SillyTavern-style prompts, {{char}}/{{user}} macros, history
+  ContentPolicy                   Mature-mode gating and the always-on minor safeguards
+  ImageIntent, CardStores         Picture requests; card store links → downloads
 app/src/test/                     Unit tests for the parser, filter, history, log, cards, prompts and policy
 ```
+
+## Library: venicex3-cards
+
+The card reader, prompt builder and content policy are also a small Kotlin library,
+`dev.sweitz:venicex3-cards`, published to GitHub Packages with each release. See
+[cards/README.md](cards/README.md) for install steps and an example.
 
 ## Credits and licences
 

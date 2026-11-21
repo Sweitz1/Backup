@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **venicex3-cards library.** The card reader, prompt builder, content policy, picture requests
+  and card-store links are now a separate pure-Kotlin module (`cards/`), published to GitHub
+  Packages as `dev.sweitz:venicex3-cards` on each release. The app uses it unchanged.
+
+### Fixed
+- The Release workflow accepts `V`-prefixed and dotted tags (`V0.2.0`, `V.0.2.0`) as well as `v0.2.0`.
+
 ## [0.2.0] - 2026-11-21
 
 ### Added
