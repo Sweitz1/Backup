@@ -12,7 +12,7 @@ Tap the temple, talk, and your character answers in front of your eyes, in both 
 🎨 "Send me a selfie" → AI-drawn pictures
 🔊 Read-aloud · temple-gesture controls
 🔞 Optional 18+ mode, off by default
-Free & open source → github.com/Sweitz1/Backup
+Free & open source. Download v0.2.0 → github.com/Sweitz1/Backup/releases
 #RayNeo #ARglasses #SillyTavern #AI
 
 ## Long (Reddit r/SillyTavernAI, RayNeo Discord)
@@ -31,7 +31,7 @@ You tap the temple, speak, and the answer shows in both eyes.
 - **Mature mode (18+):** off by default, unlocked only by confirming your age over adb, with separate switches for text, images and video. Mature cards involving minors are refused.
 - **Privacy:** chats stay in memory only, and the request log keeps metadata only.
 
-**Install:** sideload with adb. The steps are in the README.
+**Download:** github.com/Sweitz1/Backup/releases (v0.2.0). Sideload with adb; the steps are in the README.
 **Code:** github.com/Sweitz1/Backup
 
 It's not affiliated with Venice, RayNeo or SillyTavern. Feedback and real-device screenshots are welcome!
