@@ -20,8 +20,8 @@ android {
         applicationId = "dev.sweitz.veniceglasses"
         minSdk = 26 // RayNeo Mercury SDK minimum
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         buildConfigField("String", "DEFAULT_API_KEY", "\"${localProps.getProperty("VENICE_API_KEY", "")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -66,4 +66,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests (android.jar only has stubs); used by the card parser.
+    testImplementation("org.json:json:20240303")
 }
