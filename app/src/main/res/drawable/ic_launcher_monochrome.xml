@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single-colour version for Android 13+ themed icons: the X with the visor cut out of it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillAlpha="0.55"
+        android:fillColor="#FF000000"
+        android:pathData="M30,26L41,26L54,43L67,26L78,26L60,50L78,82L67,82L54,59L41,82L30,82L48,50Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M24,42L84,42L82,48L78,58L62,62L57,55L51,55L46,62L30,58L26,48Z M30,46L33,55L45,57L49,52L50,46Z M78,46L58,46L59,52L63,57L75,55Z" />
+</vector>

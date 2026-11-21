@@ -1,3 +1,5 @@
+<img src="docs/icon/venicex3-icon-512.png" alt="VeniceX3 icon" width="96" align="right">
+
 # VeniceX3: Venice AI on RayNeo X3 Pro glasses
 
 An unofficial Android client that brings [Venice AI](https://venice.ai) chat to RayNeo X3 Pro AR

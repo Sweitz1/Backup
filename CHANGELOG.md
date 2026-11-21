@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- **Launcher icon.** An adaptive icon (an angular AR visor with mirrored lenses over a glowing X),
+  with a monochrome layer for themed icons. The app used Android's default icon before.
 - **venicex3-cards library.** The card reader, prompt builder, content policy, picture requests
   and card-store links are now a separate pure-Kotlin module (`cards/`), published to GitHub
   Packages as `dev.sweitz:venicex3-cards` on each release. The app uses it unchanged.
