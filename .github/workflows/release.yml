@@ -10,6 +10,10 @@ on:
       tag:
         description: "Existing tag to (re)publish, e.g. v0.2.0"
         required: true
+      build_ref:
+        description: "Optional branch or commit to build instead of the tag (e.g. main)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -25,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.inputs.build_ref || env.TAG }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
