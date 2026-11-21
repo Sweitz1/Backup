@@ -6,4 +6,9 @@
     <color name="accent">#FF4FD1C5</color>
     <color name="listening">#FFFF6B6B</color>
     <color name="focus_bg">#FF1F3A38</color>
+    <color name="panel">#E6121C1C</color>
+    <color name="panel_stroke">#554FD1C5</color>
+    <color name="pill">#FF103A36</color>
+    <color name="mature">#FFFF8A65</color>
+    <color name="name">#FFFFD180</color>
 </resources>

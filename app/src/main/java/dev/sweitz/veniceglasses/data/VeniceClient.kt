@@ -39,7 +39,10 @@ class VeniceClient(
      * Streams the assistant's reply as text chunks (reasoning stripped).
      * Cancelling the collector cancels the HTTP call.
      */
-    fun streamChat(messages: List<ChatMessage>): Flow<String> = callbackFlow {
+    fun streamChat(
+        messages: List<ChatMessage>,
+        includeVeniceSystemPrompt: Boolean = settings.includeVeniceSystemPrompt,
+    ): Flow<String> = callbackFlow {
         val model = settings.model
         val body = JSONObject().apply {
             put("model", model)
@@ -48,7 +51,7 @@ class VeniceClient(
                 messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
             })
             put("venice_parameters", JSONObject().apply {
-                put("include_venice_system_prompt", settings.includeVeniceSystemPrompt)
+                put("include_venice_system_prompt", includeVeniceSystemPrompt)
                 put("strip_thinking_response", true)
                 put("enable_web_search", settings.webSearch)
             })
@@ -115,6 +118,30 @@ class VeniceClient(
         val json = execute(newRequest("audio/transcriptions").post(form).build(), model, "transcription")
         JSONObject(json).optString("text").trim()
     }
+
+    /**
+     * Generates one image with Venice (`/image/generate`) and returns its bytes (WebP).
+     * [safeMode] true makes Venice blur adult content; it's only false when mature images are on.
+     */
+    suspend fun generateImage(prompt: String, safeMode: Boolean, negativePrompt: String? = null): ByteArray =
+        withContext(Dispatchers.IO) {
+            val model = settings.imageModel
+            val body = JSONObject().apply {
+                put("model", model)
+                put("prompt", prompt.take(1400))
+                if (!negativePrompt.isNullOrBlank()) put("negative_prompt", negativePrompt)
+                put("width", 768)
+                put("height", 1024)
+                put("format", "webp")
+                put("safe_mode", safeMode)
+                put("hide_watermark", false)
+                put("return_binary", false)
+            }
+            val json = execute(newRequest("image/generate").post(body.toString().toRequestBody(JSON)).build(), model, "image")
+            val b64 = JSONObject(json).optJSONArray("images")?.optString(0)?.takeIf { it.isNotBlank() }
+                ?: throw VeniceException("No image returned")
+            java.util.Base64.getMimeDecoder().decode(b64.substringAfter("base64,"))
+        }
 
     /** Text models available to this key, for the menu. */
     suspend fun listTextModels(): List<ModelInfo> = withContext(Dispatchers.IO) {

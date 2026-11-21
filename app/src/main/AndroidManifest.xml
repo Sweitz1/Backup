@@ -36,6 +36,11 @@
             android:exported="false"
             android:screenOrientation="landscape" />
 
+        <activity
+            android:name=".ui.CharacterPickerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
         <!--
           Settings over adb (API key, model…). Guarded by DUMP, which the adb shell holds but
           normal apps can't get, so no other app on the glasses can change your key.

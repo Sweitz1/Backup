@@ -2,9 +2,16 @@
 <resources>
     <string name="app_name">VeniceX3</string>
 
-    <string name="hint_idle">Tap: speak · Swipe: scroll · Long press: new chat · Triple tap: menu</string>
+    <string name="hint_idle">Tap: speak · Long press: new chat · Triple tap: menu</string>
+    <string name="hint_listening">Tap: done · Double-tap: cancel</string>
+    <string name="hint_busy">Double-tap: stop</string>
+    <string name="hint_answer">Tap: ask again · Double-tap: close · Swipe: scroll</string>
+    <string name="hint_greeting">Tap: reply · Long press: new chat · Triple tap: menu</string>
     <string name="status_ready">Ready</string>
-    <string name="status_listening">Listening… tap to send</string>
+    <string name="status_listening">Listening</string>
+    <string name="status_drawing">Drawing…</string>
+    <string name="badge_mature">18+</string>
+    <string name="image_safe_note">Safe mode on: mature images are blurred</string>
     <string name="status_transcribing">Transcribing…</string>
     <string name="status_thinking">Thinking…</string>
     <string name="status_answering">Answering…</string>
@@ -23,4 +30,13 @@
     <string name="picker_web_search">Venice web search: %1$s</string>
     <string name="picker_hint">Swipe: move · Tap: select · Double tap: back</string>
     <string name="picker_loading">Loading models…</string>
+    <string name="picker_character">Character: %1$s</string>
+    <string name="picker_layout">Layout: %1$s</string>
+    <string name="picker_mature">Mature mode (18+): %1$s</string>
+    <string name="picker_mature_text">  · Mature text: %1$s</string>
+    <string name="picker_mature_images">  · Mature images: %1$s</string>
+    <string name="picker_mature_video">  · Mature video: %1$s</string>
+    <string name="picker_mature_locked">Mature mode: locked (confirm 18+ over adb)</string>
+    <string name="characters_title">Characters</string>
+    <string name="characters_hint">Swipe: move · Tap: chat · Double tap: back</string>
 </resources>

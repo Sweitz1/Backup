@@ -4,8 +4,11 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
@@ -25,14 +28,20 @@ import kotlinx.coroutines.launch
  *
  * Temple touchpad:
  *   tap          start speaking / stop and send
- *   double tap   stop listening or answering; when idle, exit
- *   long press   new chat
- *   triple tap   menu (model, read aloud, web search)
+ *   double tap   stop listening or answering; close the answer; when idle, exit
+ *   long press   new chat (the character greets you again)
+ *   triple tap   menu (character, mature mode, layout, model, read aloud, web search)
  *   swipe        scroll the answer
  */
 class ChatActivity : BaseMirrorActivity<ActivityChatBinding>() {
     private val vm: ChatViewModel by viewModels()
     private var followTail = true // keep the newest text in view while it streams
+
+    // What's currently loaded in the avatar slot, so it's only reloaded when it changes.
+    private var shownLayout: String? = null
+    private var shownAvatar: String? = null
+    private var shownVideo: String? = null
+    private var shownImage: Bitmap? = null
 
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.onTap(hasMicPermission = true) else FToast.show(getString(R.string.status_no_mic))
@@ -66,6 +75,12 @@ class ChatActivity : BaseMirrorActivity<ActivityChatBinding>() {
     override fun onResume() {
         super.onResume()
         vm.refreshSettings()
+        if (shownVideo != null) mBindingPair.updateView { vvAvatar.start() }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (shownVideo != null) mBindingPair.updateView { vvAvatar.pause() }
     }
 
     /** `adb shell am start -n …/.ui.ChatActivity --es ask "question"` — handy for testing without the mic. */
@@ -80,7 +95,7 @@ class ChatActivity : BaseMirrorActivity<ActivityChatBinding>() {
     private fun onTemple(action: TempleAction) {
         when (action) {
             is TempleAction.Click -> onTap()
-            is TempleAction.DoubleClick -> if (!vm.cancel()) finish()
+            is TempleAction.DoubleClick -> if (!vm.cancel() && !vm.closeAnswer()) finish()
             is TempleAction.LongClick -> {
                 vm.newChat()
                 followTail = true
@@ -122,38 +137,133 @@ class ChatActivity : BaseMirrorActivity<ActivityChatBinding>() {
     }
 
     private fun render(ui: ChatUi) {
+        applyLayout(ui.layout)
+        applyAvatar(ui.avatarPath, ui.videoPath)
+
         val status = when {
             !ui.hasKey -> getString(R.string.status_no_key)
             ui.phase == Phase.Listening -> getString(R.string.status_listening)
             ui.phase == Phase.Transcribing -> getString(R.string.status_transcribing)
             ui.phase == Phase.Thinking -> getString(R.string.status_thinking)
             ui.phase == Phase.Answering -> getString(R.string.status_answering)
+            ui.phase == Phase.Drawing -> getString(R.string.status_drawing)
             ui.phase == Phase.Error -> ui.error ?: "Error"
             else -> getString(R.string.status_ready)
         }
         val colorRes = when {
-            !ui.hasKey || ui.phase == Phase.Error || ui.phase == Phase.Listening -> R.color.listening
-            ui.busy -> R.color.accent
+            !ui.hasKey || ui.phase == Phase.Error -> R.color.listening
+            ui.phase == Phase.Listening || ui.busy -> R.color.accent
             else -> R.color.muted
         }
         val color = ContextCompat.getColor(this, colorRes)
-        val reply = ui.reply.ifEmpty { if (ui.phase == Phase.Idle && ui.question.isEmpty()) getString(R.string.hint_idle) else "" }
+        val showingAnswer = ui.question.isNotEmpty() || ui.image != null
+        val reply = ui.reply.ifEmpty {
+            if (ui.phase == Phase.Idle && !showingAnswer && ui.isAssistant) getString(R.string.hint_idle) else ""
+        }
+        val hint = getString(
+            when {
+                ui.phase == Phase.Listening -> R.string.hint_listening
+                ui.busy -> R.string.hint_busy
+                showingAnswer -> R.string.hint_answer
+                ui.reply.isNotEmpty() -> R.string.hint_greeting // a character's greeting
+                else -> R.string.hint_idle
+            },
+        )
+        val question = if (ui.question.isEmpty()) "" else "“${ui.question}”"
+        val imageChanged = ui.image !== shownImage
+        shownImage = ui.image
 
         mBindingPair.updateView {
             tvStatus.text = status
             tvStatus.setTextColor(color)
             statusDot.backgroundTintList = ColorStateList.valueOf(color)
+            tvName.text = ui.characterName
+            tvMature.visibility = if (ui.mature) View.VISIBLE else View.GONE
             tvModel.text = ui.model
-            tvQuestion.text = ui.question
-            tvQuestion.visibility = if (ui.question.isEmpty()) View.GONE else View.VISIBLE
-            tvReply.text = reply
-            tvHint.visibility = if (ui.reply.isEmpty() && ui.question.isEmpty()) View.GONE else View.VISIBLE
+            tvQuestion.text = question
+            tvQuestion.visibility = if (question.isEmpty() || ui.phase == Phase.Listening) View.GONE else View.VISIBLE
+            wave.visibility = if (ui.phase == Phase.Listening) View.VISIBLE else View.GONE
+            if (ui.phase == Phase.Listening) wave.setLevels(ui.levels)
+            tvReply.text = if (ui.phase == Phase.Listening) "" else reply
+            tvReply.visibility = if (tvReply.text.isEmpty()) View.GONE else View.VISIBLE
+            if (imageChanged) {
+                ivImage.setImageBitmap(ui.image)
+                ivImage.visibility = if (ui.image == null) View.GONE else View.VISIBLE
+            }
+            tvHint.text = hint
+            tvHint.visibility = if (!ui.isAssistant || showingAnswer || ui.phase != Phase.Idle) View.VISIBLE else View.GONE
             if (followTail && ui.phase == Phase.Answering) scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-            if (ui.phase == Phase.Thinking) scroll.scrollTo(0, 0)
+            if (ui.phase == Phase.Thinking || ui.phase == Phase.Drawing) scroll.scrollTo(0, 0)
+        }
+        if (imageChanged && ui.image != null && ui.imageSafeMode && !ui.isAssistant && ui.mature) {
+            FToast.show(getString(R.string.image_safe_note))
         }
     }
 
+    /** compact: avatar above the panel · portrait: tall figure on the left, panel on the right. */
+    private fun applyLayout(layout: String) {
+        if (layout == shownLayout) return
+        shownLayout = layout
+        val d = resources.displayMetrics.density
+        val portrait = layout == "portrait"
+        mBindingPair.updateView {
+            root.orientation = if (portrait) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            avatarBox.layoutParams = if (portrait) {
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply { marginEnd = (12 * d).toInt() }
+            } else {
+                LinearLayout.LayoutParams((96 * d).toInt(), (96 * d).toInt()).apply {
+                    marginStart = (12 * d).toInt()
+                    bottomMargin = (-6 * d).toInt() // tuck the avatar onto the panel's top edge
+                }
+            }
+            panel.layoutParams = if (portrait) {
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.15f)
+            } else {
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
+            }
+        }
+    }
+
+    private fun applyAvatar(avatar: String?, video: String?) {
+        if (avatar == shownAvatar && video == shownVideo) return
+        shownAvatar = avatar
+        shownVideo = video
+        val bitmap = avatar?.let { decodeAvatar(it) }
+        mBindingPair.updateView {
+            avatarBox.visibility = if (bitmap != null || video != null) View.VISIBLE else View.GONE
+            ivAvatar.setImageBitmap(bitmap)
+            ivAvatar.visibility = if (video == null) View.VISIBLE else View.GONE
+            if (video != null) {
+                vvAvatar.visibility = View.VISIBLE
+                vvAvatar.setOnPreparedListener { mp ->
+                    mp.isLooping = true
+                    mp.setVolume(0f, 0f) // muted: the glasses' speaker is for answers
+                    vvAvatar.start()
+                }
+                vvAvatar.setOnErrorListener { _, _, _ ->
+                    vvAvatar.visibility = View.GONE
+                    ivAvatar.visibility = View.VISIBLE
+                    true
+                }
+                vvAvatar.setVideoPath(video)
+            } else {
+                vvAvatar.stopPlayback()
+                vvAvatar.visibility = View.GONE
+            }
+        }
+    }
+
+    /** Decodes an avatar at roughly display size, so large card art doesn't use much memory. */
+    private fun decodeAvatar(path: String): Bitmap? = runCatching {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        var sample = 1
+        while (bounds.outHeight / (sample * 2) >= AVATAR_MAX_PX && bounds.outWidth / (sample * 2) >= AVATAR_MAX_PX / 2) sample *= 2
+        BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
+    }.getOrNull()
+
     companion object {
         const val EXTRA_ASK = "ask"
+        private const val AVATAR_MAX_PX = 900
     }
 }

@@ -6,6 +6,9 @@ data class ChatMessage(val role: String, val content: String)
 class Conversation(private val maxTurns: Int = 8) {
     private val turns = ArrayList<ChatMessage>()
 
+    /** A character's first message (SillyTavern `first_mes`), sent ahead of the history. */
+    var greeting: String = ""
+
     val messages: List<ChatMessage> get() = turns.toList()
 
     fun addUser(text: String) = add(ChatMessage("user", text))
@@ -19,11 +22,21 @@ class Conversation(private val maxTurns: Int = 8) {
         if (turns.lastOrNull()?.role == "user") turns.removeAt(turns.lastIndex)
     }
 
-    fun clear() = turns.clear()
+    fun clear() {
+        turns.clear()
+        greeting = ""
+    }
 
-    /** System prompt + history, ready to send. */
-    fun forRequest(systemPrompt: String?): List<ChatMessage> =
-        (if (systemPrompt.isNullOrBlank()) emptyList() else listOf(ChatMessage("system", systemPrompt))) + turns
+    /**
+     * System prompt, greeting, history, then optional post-history instructions (the order
+     * SillyTavern uses), ready to send.
+     */
+    fun forRequest(systemPrompt: String?, postHistory: String? = null): List<ChatMessage> = buildList {
+        if (!systemPrompt.isNullOrBlank()) add(ChatMessage("system", systemPrompt))
+        if (greeting.isNotBlank()) add(ChatMessage("assistant", greeting))
+        addAll(turns)
+        if (!postHistory.isNullOrBlank()) add(ChatMessage("system", postHistory))
+    }
 
     private fun add(m: ChatMessage) {
         turns += m

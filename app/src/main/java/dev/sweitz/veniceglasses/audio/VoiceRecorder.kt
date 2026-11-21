@@ -43,6 +43,9 @@ class VoiceRecorder(private val context: Context) {
         startedAt = System.currentTimeMillis()
     }
 
+    /** Loudest level since the last call (0–32767), for the listening waveform. */
+    fun amplitude(): Int = runCatching { recorder?.maxAmplitude ?: 0 }.getOrDefault(0)
+
     /**
      * Stops recording. Returns the clip, or null if it was discarded, too short to contain
      * speech, or the recorder failed.

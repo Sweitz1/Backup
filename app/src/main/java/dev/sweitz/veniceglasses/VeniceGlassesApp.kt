@@ -2,6 +2,7 @@ package dev.sweitz.veniceglasses
 
 import android.app.Application
 import com.ffalcon.mercury.android.sdk.MercurySDK
+import dev.sweitz.veniceglasses.data.CharacterStore
 import dev.sweitz.veniceglasses.data.RequestLog
 import dev.sweitz.veniceglasses.data.Settings
 import dev.sweitz.veniceglasses.data.VeniceClient
@@ -14,6 +15,8 @@ class VeniceGlassesApp : Application() {
         private set
     lateinit var venice: VeniceClient
         private set
+    lateinit var characters: CharacterStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -22,6 +25,7 @@ class VeniceGlassesApp : Application() {
         settings = Settings(this)
         requestLog = RequestLog(File(filesDir, "requests-24h.csv"))
         venice = VeniceClient(settings, requestLog)
+        characters = CharacterStore(this)
     }
 }
 
