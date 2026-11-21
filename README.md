@@ -139,6 +139,24 @@ stays safe for work, and so does any picture request that does. Every mature pro
 characters are adults, and image requests always carry a negative prompt against childlike
 subjects. The image model is set with `--es image_model <id>` (default `venice-sd35`).
 
+## Install a release
+
+Download the APK from the [Releases page](../../releases): `VeniceX3-<version>.apk` if it's
+signed, otherwise `VeniceX3-<version>-debug.apk`. Check it against `SHA256SUMS.txt`, then:
+
+```bash
+adb install -r VeniceX3-0.2.0-debug.apk
+adb shell pm grant dev.sweitz.veniceglasses android.permission.RECORD_AUDIO
+```
+
+Then set your Venice API key over adb (see [Settings over adb](#settings-over-adb)).
+
+To publish a release: set `versionName` / `versionCode` in `app/build.gradle.kts`, add the
+version to [CHANGELOG.md](CHANGELOG.md), then push a matching tag
+(`git tag v0.2.0 && git push origin v0.2.0`). The Release workflow builds, tests and attaches
+the APKs. For a signed APK, add the `SIGNING_*` repository secrets listed in
+`.github/workflows/release.yml`.
+
 ## Build and install
 
 Requirements: Android Studio (Ladybug or newer) or the Android SDK with JDK 17, and the glasses
