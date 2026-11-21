@@ -4,7 +4,7 @@ name: Release
 # publish a GitHub Release with them attached. The notes come from CHANGELOG.md.
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*", "V*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -41,7 +41,9 @@ jobs:
       - name: Check tag matches versionName
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          if [ "v${VERSION}" != "${TAG}" ]; then
+          # Accept v0.2.0, V0.2.0, V.0.2.0 and 0.2.0 for versionName 0.2.0.
+          NORM="${TAG#[vV]}"; NORM="${NORM#.}"
+          if [ "${NORM}" != "${VERSION}" ]; then
             echo "::error title=Version mismatch::Tag ${TAG} but versionName is ${VERSION}"
             exit 1
           fi
