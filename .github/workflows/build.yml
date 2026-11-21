@@ -74,7 +74,7 @@ jobs:
       - name: Unit tests
         run: |
           set -o pipefail
-          if ! ./gradlew --no-daemon testDebugUnitTest 2>&1 | tee test.log; then
+          if ! ./gradlew --no-daemon testDebugUnitTest :cards:test 2>&1 | tee test.log; then
             msg=$(grep -E "FAILED|What went wrong|e: |AssertionError" test.log | head -25 | sed 's/%/%25/g' | tr '\n' '\r' | sed 's/\r/%0A/g')
             echo "::error title=Unit tests failed::${msg:-see log}"
             exit 1
@@ -85,7 +85,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: app/build/reports/tests/
+          path: |
+            app/build/reports/tests/
+            cards/build/reports/tests/
           if-no-files-found: ignore
           retention-days: 14
 

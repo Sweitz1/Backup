@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "VeniceX3"
 include(":app")
+include(":cards")

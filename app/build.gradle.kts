@@ -49,6 +49,9 @@ android {
 }
 
 dependencies {
+    // Character cards, prompts and content policy (also published as dev.sweitz:venicex3-cards)
+    implementation(project(":cards"))
+
     // RayNeo X3 Pro SDK (binocular mirroring, temple touch gestures, glasses toasts)
     implementation(files("libs/MercuryAndroidSDK-v0.2.6.aar"))
 

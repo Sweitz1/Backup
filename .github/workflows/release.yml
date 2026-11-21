@@ -4,7 +4,7 @@ name: Release
 # publish a GitHub Release with them attached. The notes come from CHANGELOG.md.
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*", "V*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  packages: write # publish dev.sweitz:venicex3-cards to GitHub Packages
 
 jobs:
   release:
@@ -41,14 +42,16 @@ jobs:
       - name: Check tag matches versionName
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          if [ "v${VERSION}" != "${TAG}" ]; then
+          # Accept v0.2.0, V0.2.0, V.0.2.0 and 0.2.0 for versionName 0.2.0.
+          NORM="${TAG#[vV]}"; NORM="${NORM#.}"
+          if [ "${NORM}" != "${VERSION}" ]; then
             echo "::error title=Version mismatch::Tag ${TAG} but versionName is ${VERSION}"
             exit 1
           fi
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
       - name: Unit tests
-        run: ./gradlew --no-daemon testDebugUnitTest
+        run: ./gradlew --no-daemon testDebugUnitTest :cards:test
 
       - name: Build APKs
         run: ./gradlew --no-daemon assembleDebug assembleRelease
@@ -78,6 +81,14 @@ jobs:
             cp "$UNSIGNED" "dist/VeniceX3-${VERSION}-release-unsigned.apk"
           fi
           (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+
+      # The cards library (see cards/README.md), same version as the app. Publishing a version
+      # that already exists fails, so a re-run for the same tag skips this step's error.
+      - name: Publish cards library to GitHub Packages
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew --no-daemon :cards:publish -PcardsVersion="${VERSION}"
 
       - name: Release notes from CHANGELOG.md
         run: |
