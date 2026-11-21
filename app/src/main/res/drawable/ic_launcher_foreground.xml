@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher icon foreground: a bold teal X behind an angular orange AR visor with dark mirrored
+  lenses. Everything sits inside the 66dp safe zone of the 108dp adaptive-icon canvas.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- The X -->
+    <path
+        android:fillAlpha="0.9"
+        android:pathData="M30,26L41,26L54,43L67,26L78,26L60,50L78,82L67,82L54,59L41,82L30,82L48,50Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="20"
+                android:startY="20"
+                android:endX="88"
+                android:endY="88">
+                <item android:offset="0" android:color="#FF7FFFF2" />
+                <item android:offset="1" android:color="#FF1FA89C" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Visor shadow -->
+    <path
+        android:fillAlpha="0.55"
+        android:fillColor="#FF000000"
+        android:pathData="M24,46L84,46L82,52L78,62L62,66L57,59L51,59L46,66L30,62L26,52Z" />
+
+    <!-- Visor -->
+    <path android:pathData="M24,42L84,42L82,48L78,58L62,62L57,55L51,55L46,62L30,58L26,48Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="40"
+                android:endX="54"
+                android:endY="66">
+                <item android:offset="0" android:color="#FFFFD180" />
+                <item android:offset="0.5" android:color="#FFFF8A3D" />
+                <item android:offset="1" android:color="#FFD9480F" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Mirrored lenses -->
+    <path android:pathData="M30,46L50,46L49,52L45,57L33,55Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="47"
+                android:endX="54"
+                android:endY="58">
+                <item android:offset="0" android:color="#FF16302E" />
+                <item android:offset="1" android:color="#FF020707" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M78,46L58,46L59,52L63,57L75,55Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="47"
+                android:endX="54"
+                android:endY="58">
+                <item android:offset="0" android:color="#FF16302E" />
+                <item android:offset="1" android:color="#FF020707" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Lens glints -->
+    <path
+        android:fillColor="#FF4FD1C5"
+        android:pathData="M31,47L44,47L35,51Z" />
+    <path
+        android:fillColor="#FF4FD1C5"
+        android:pathData="M59,47L72,47L63,51Z" />
+</vector>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="432" height="432">
+  <defs>
+    <radialGradient id="bg" cx="54" cy="44" r="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#123E3A"/><stop offset="0.55" stop-color="#071514"/><stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="x" x1="20" y1="20" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FFFF2"/><stop offset="1" stop-color="#1FA89C"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="54" y1="40" x2="54" y2="66" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD180"/><stop offset="0.5" stop-color="#FF8A3D"/><stop offset="1" stop-color="#D9480F"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="54" y1="47" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16302E"/><stop offset="1" stop-color="#020707"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <!-- foreground (inside the 66dp safe zone) -->
+  <path d="M30,26 L41,26 L54,43 L67,26 L78,26 L60,50 L78,82 L67,82 L54,59 L41,82 L30,82 L48,50 Z" fill="url(#x)" fill-opacity="0.9"/>
+  <path d="M24,44 L84,44 L82,50 L78,60 L62,64 L57,57 L51,57 L46,64 L30,60 L26,50 Z" fill="#000000" fill-opacity="0.55" transform="translate(0,2)"/>
+  <path d="M24,42 L84,42 L82,48 L78,58 L62,62 L57,55 L51,55 L46,62 L30,58 L26,48 Z" fill="url(#visor)"/>
+  <path d="M30,46 L50,46 L49,52 L45,57 L33,55 Z" fill="url(#lens)"/>
+  <path d="M78,46 L58,46 L59,52 L63,57 L75,55 Z" fill="url(#lens)"/>
+  <path d="M31,47 L44,47 L35,51 Z" fill="#4FD1C5"/>
+  <path d="M59,47 L72,47 L63,51 Z" fill="#4FD1C5"/>
+</svg>
