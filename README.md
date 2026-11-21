@@ -65,7 +65,33 @@ adb shell am start -n $PKG/.ui.ConfigActivity --ez list_characters true && adb l
 adb shell am start -n $PKG/.ui.ConfigActivity --ez export_template true
 ```
 
+### Card stores
+
+SillyTavern doesn't host characters, so cards come from community sites. Like SillyTavern's
+"Import from external URL", the app can download a card from a link (triple tap → **Card
+stores** lists these on the glasses):
+
+| Store | Link to paste | Notes |
+| --- | --- | --- |
+| [Chub.ai](https://chub.ai) | `https://chub.ai/characters/author/name` | Largest library; SFW/NSFW filters; lightly moderated |
+| [Character Tavern](https://character-tavern.com) | `https://character-tavern.com/character/author/name` | Curated, includes adult scenarios |
+| [CharaVault](https://charavault.net) | the card's direct `.png`/`.json` link | Adult themes; strict rules against minors |
+| [AI Character Cards](https://aicharactercards.com) | the card's direct `.png`/`.json` link | Moderated, vetted cards |
+| [JanitorAI](https://janitorai.com) | only a file link the creator offers | No card downloads of its own |
+| GitHub / r/SillyTavernAI lists | the raw file link | e.g. `raw.githubusercontent.com/…/card.png` |
+
+```bash
+adb shell am start -n $PKG/.ui.ConfigActivity --es import_url "https://chub.ai/characters/author/name"
+adb logcat -d -s VeniceX3   # "Imported …" or the reason it failed
+```
+
+The imported card is saved to the characters folder and selected. Nothing but the download
+request goes to the store: no key, account or chat. Each store's own terms apply to its cards.
+
 Cards tagged `NSFW` (or with `extensions.nsfw: true`) are only listed while mature text is on.
+A card marked mature that involves minors (by its wording or an age under 18) is **refused**,
+whether it's downloaded or pushed into the folder. A card that mentions minors without being
+marked mature is kept, but always stays safe for work.
 Chat history stays in memory only, as before.
 
 ## Mature mode (18+)
@@ -171,6 +197,8 @@ app/src/main/java/dev/sweitz/veniceglasses/
   data/PromptBuilder.kt           SillyTavern-style prompt assembly and {{char}}/{{user}} macros
   data/ContentPolicy.kt           Mature-mode gating and the always-on minor safeguards
   data/ImageIntent.kt             Detects "show me / draw / selfie" requests
+  data/CardStores.kt              Card store directory and link → download URL rules
+  data/CardDownloader.kt          Downloads and imports a card from a link
   audio/VoiceRecorder.kt          Records questions as AAC .m4a
   audio/Speaker.kt                On-device text-to-speech
   ui/ChatActivity.kt              Main mirrored screen and temple gestures
@@ -179,6 +207,7 @@ app/src/main/java/dev/sweitz/veniceglasses/
   ui/CharacterPickerActivity.kt   Character list
   ui/WaveformView.kt              Microphone level bars while listening
   ui/CreditsActivity.kt           Credits & licences screen (data/Credits.kt)
+  ui/CardStoresActivity.kt        Card stores screen
   ui/ConfigActivity.kt            adb-only settings
 app/src/test/                     Unit tests for the parser, filter, history, log, cards, prompts and policy
 ```

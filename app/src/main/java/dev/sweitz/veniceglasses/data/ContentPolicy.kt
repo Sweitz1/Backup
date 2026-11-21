@@ -38,7 +38,13 @@ object ContentPolicy {
 
     /** True if this character must stay safe-for-work regardless of the mature switches. */
     fun characterRestricted(c: Character): Boolean =
-        mentionsMinor(listOf(c.name, c.description, c.personality, c.scenario, c.tags.joinToString(" ")).joinToString("\n"))
+        mentionsMinor(listOf(c.name, c.description, c.personality, c.scenario, c.firstMessage, c.exampleDialogue, c.tags.joinToString(" ")).joinToString("\n"))
+
+    /**
+     * A card marked mature that also involves minors is refused outright, on import and when the
+     * folder is scanned. (Cards from lightly moderated stores can be like this.)
+     */
+    fun importRefused(c: Character): Boolean = c.nsfw && characterRestricted(c)
 
     /** Whether the character should appear in the character list at all. */
     fun characterVisible(c: Character, access: MatureAccess): Boolean =

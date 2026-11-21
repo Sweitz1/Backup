@@ -35,6 +35,7 @@ class ModelPickerActivity : BaseMirrorActivity<ActivityModelPickerBinding>() {
         data object ReadAloud : Item
         data object WebSearch : Item
         data object Credits : Item
+        data object CardStores : Item
         data class Model(val info: ModelInfo) : Item
     }
 
@@ -73,6 +74,7 @@ class ModelPickerActivity : BaseMirrorActivity<ActivityModelPickerBinding>() {
 
     private fun settingItems(): List<Item> = buildList {
         add(Item.Character)
+        add(Item.CardStores)
         add(Item.Layout)
         add(Item.Mature)
         if (settings.matureEnabled) {
@@ -128,6 +130,7 @@ class ModelPickerActivity : BaseMirrorActivity<ActivityModelPickerBinding>() {
             Item.MatureText -> { settings.matureText = !settings.matureText; render() }
             Item.MatureImages -> { settings.matureImages = !settings.matureImages; render() }
             Item.MatureVideo -> { settings.matureVideo = !settings.matureVideo; render() }
+            Item.CardStores -> startActivity(android.content.Intent(this, CardStoresActivity::class.java))
             Item.Credits -> startActivity(android.content.Intent(this, CreditsActivity::class.java))
             Item.ReadAloud -> {
                 settings.readAloud = !settings.readAloud
@@ -157,6 +160,7 @@ class ModelPickerActivity : BaseMirrorActivity<ActivityModelPickerBinding>() {
         Item.MatureImages -> getString(R.string.picker_mature_images, onOff(settings.matureImages))
         Item.MatureVideo -> getString(R.string.picker_mature_video, onOff(settings.matureVideo))
         Item.Credits -> getString(R.string.picker_credits)
+        Item.CardStores -> getString(R.string.picker_stores)
         Item.ReadAloud -> getString(if (settings.readAloud) R.string.picker_read_aloud_on else R.string.picker_read_aloud_off)
         Item.WebSearch -> getString(R.string.picker_web_search, settings.webSearch.uppercase())
         is Item.Model -> (if (item.info.id == settings.model) "● " else "   ") + item.info.name

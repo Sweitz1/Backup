@@ -38,12 +38,31 @@ class CharacterStore(context: Context) {
 
     /** Copies a card file (and nothing else) into the characters folder. Returns the parsed card. */
     fun import(source: File): Character {
-        val bytes = source.readBytes()
-        CharacterCard.parse(bytes, "check") // throws if it isn't a card
-        val dest = File(folder, source.name.replace(Regex("[^A-Za-z0-9._ -]"), "_"))
-        if (source.canonicalPath != dest.canonicalPath) dest.writeBytes(bytes)
+        if (source.length() > MAX_CARD_BYTES) throw CharacterCard.InvalidCard("file is too large")
+        return importBytes(source.readBytes(), source.name, source)
+    }
+
+    /**
+     * Saves card bytes (e.g. downloaded from a card store) as [fileName] in the characters folder.
+     * Throws if they aren't a card, or the card is refused by [ContentPolicy.importRefused].
+     */
+    fun importBytes(bytes: ByteArray, fileName: String, source: File? = null): Character {
+        val card = CharacterCard.parse(bytes, "check") // throws if it isn't a card
+        if (ContentPolicy.importRefused(card)) throw CharacterCard.InvalidCard(REFUSED)
+        val dest = uniqueFile(fileName.replace(Regex("[^A-Za-z0-9._ -]"), "_"), source)
+        if (source?.canonicalPath != dest.canonicalPath) dest.writeBytes(bytes)
         cache = null
-        return all(refresh = true).first { it.id == idFor(dest) }
+        return all(refresh = true).firstOrNull { it.id == idFor(dest) }
+            ?: throw CharacterCard.InvalidCard("couldn't load the saved card")
+    }
+
+    /** Doesn't overwrite a different card that already has this name. */
+    private fun uniqueFile(name: String, source: File?): File {
+        var f = File(folder, name)
+        if (source != null && source.canonicalPath == f.canonicalPath) return f
+        var n = 2
+        while (f.exists()) f = File(folder, "${name.substringBeforeLast('.')}-${n++}.${name.substringAfterLast('.', "png")}")
+        return f
     }
 
     private fun scan(): List<Character> {
@@ -59,6 +78,7 @@ class CharacterStore(context: Context) {
             runCatching {
                 if (cardFile.length() > MAX_CARD_BYTES) throw CharacterCard.InvalidCard("file is too large")
                 CharacterCard.parse(cardFile.readBytes(), idFor(cardFile), image?.absolutePath, video?.absolutePath)
+                    .also { if (ContentPolicy.importRefused(it)) throw CharacterCard.InvalidCard(REFUSED) }
             }.onFailure { errors += "${cardFile.name}: ${it.message}" }.getOrNull()
         }.sortedBy { it.name.lowercase() }
         lastErrors = errors
@@ -79,6 +99,7 @@ class CharacterStore(context: Context) {
     companion object {
         val IMAGE_EXT = setOf("png", "jpg", "jpeg", "webp", "gif")
         val VIDEO_EXT = setOf("mp4", "webm", "3gp", "mkv")
-        private const val MAX_CARD_BYTES = 20L * 1024 * 1024
+        const val MAX_CARD_BYTES = 20L * 1024 * 1024
+        const val REFUSED = "refused: a mature card that involves minors"
     }
 }

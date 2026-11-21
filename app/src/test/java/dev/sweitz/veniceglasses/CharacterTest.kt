@@ -185,3 +185,32 @@ class CreditsTest {
         assertTrue(c.community.any { it.repo == "Dun-John/x3bluetooth" && it.kind == Credits.LicenseKind.PERMISSIVE })
     }
 }
+
+class CardStoresTest {
+    private val s = dev.sweitz.veniceglasses.data.CardStores
+
+    @Test fun resolvesStorePageLinks() {
+        assertEquals(listOf("https://avatars.charhub.io/avatars/someone/my-card/chara_card_v2.png"),
+            s.downloadUrls("https://chub.ai/characters/someone/my-card"))
+        assertEquals(listOf("https://cards.character-tavern.com/count-six/hybrid_narrator.png?action=download"),
+            s.downloadUrls("https://character-tavern.com/character/count-six/hybrid_narrator"))
+        assertEquals(listOf("https://example.com/cards/Rin.png"), s.downloadUrls("https://example.com/cards/Rin.png"))
+    }
+
+    @Test fun rejectsUnsupportedLinks() {
+        listOf("https://janitorai.com/characters/abc", "ftp://x.com/a.png", "https://example.com/page", "https://chub.ai/users/x")
+            .forEach { assertTrue(it, runCatching { s.downloadUrls(it) }.exceptionOrNull() is dev.sweitz.veniceglasses.data.CardStores.UnsupportedLink) }
+    }
+
+    @Test fun namesSavedFilesSafely() {
+        assertEquals("my-card.png", s.fileName("https://chub.ai/characters/someone/my-card", isPng = true))
+        assertEquals("Rin.json", s.fileName("https://example.com/c/Rin.json", isPng = false))
+    }
+
+    @Test fun refusesMatureCardsInvolvingMinors() {
+        val bad = Character.COMPANION.copy(id = "b", nsfw = true, description = "{{char}} is 15 years old")
+        assertTrue(ContentPolicy.importRefused(bad))
+        assertFalse(ContentPolicy.importRefused(bad.copy(nsfw = false))) // SFW card: kept, stays SFW
+        assertFalse(ContentPolicy.importRefused(Character.COMPANION.copy(nsfw = true)))
+    }
+}

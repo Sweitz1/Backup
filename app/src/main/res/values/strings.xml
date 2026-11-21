@@ -42,4 +42,7 @@
     <string name="picker_credits">Credits &amp; licences</string>
     <string name="credits_title">Credits &amp; licences</string>
     <string name="credits_hint">Swipe: scroll · Double tap: back · Full list: COMMUNITY.md</string>
+    <string name="picker_stores">Card stores (get characters)</string>
+    <string name="stores_title">Character card stores</string>
+    <string name="stores_hint">Swipe: scroll · Double tap: back · See README</string>
 </resources>

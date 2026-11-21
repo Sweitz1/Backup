@@ -41,6 +41,12 @@ Apache-2.0 text: https://www.apache.org/licenses/LICENSE-2.0
 | Venice AI API: chat, speech-to-text, images | Venice.ai | Venice terms of service |
 | Character Card V1/V2/V3 format | TavernAI / SillyTavern community | Open spec. VeniceX3 reads the format with its own code; no SillyTavern (AGPL-3.0) code is used. |
 
+## Character card stores
+
+Chub.ai, Character Tavern, CharaVault, AI Character Cards and JanitorAI are listed in the app
+as places to find cards. VeniceX3 contains none of their content or code; it only downloads a
+card when you give it a link. Cards belong to their creators and each site's terms apply.
+
 ## Community projects
 
 Other RayNeo X3 Pro projects are credited in [COMMUNITY.md](COMMUNITY.md). VeniceX3 uses no code

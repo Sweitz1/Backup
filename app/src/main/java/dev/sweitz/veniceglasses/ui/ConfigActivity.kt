@@ -7,6 +7,7 @@ import dev.sweitz.veniceglasses.app
 import dev.sweitz.veniceglasses.data.CharacterCard
 import dev.sweitz.veniceglasses.data.Settings
 import java.io.File
+import kotlinx.coroutines.launch
 
 /**
  * Headless settings screen for adb, since there's no keyboard on the glasses. Protected in
@@ -20,7 +21,9 @@ import java.io.File
  * print_log (true: prints the 24 h request log to logcat under tag VeniceX3).
  *
  * Characters: character (id or name), user_name, layout (compact|portrait), image_model,
- * import_card (path to a .png/.json card the app can read), list_characters (true),
+ * import_card (path to a .png/.json card the app can read), import_url (a Chub.ai or
+ * Character Tavern card page, or a direct .png/.json link: downloaded in the background,
+ * result logged), list_characters (true),
  * export_template (true: writes the built-in companion as a V2 card to the characters folder).
  *
  * Mature mode: confirm_adult (true|false — required before any mature switch works; false also
@@ -57,6 +60,18 @@ class ConfigActivity : Activity() {
                 runCatching { app.characters.import(File(path)) }
                     .onSuccess { c -> s.characterId = c.id; changed += "imported ${c.name} (${c.id})" }
                     .onFailure { Log.w(TAG, "import_card failed: ${it.message}") }
+            }
+            x.getString("import_url")?.takeIf { it.isNotBlank() }?.let { link ->
+                changed += "import_url started"
+                val a = app
+                a.appScope.launch {
+                    runCatching { a.cardDownloader.import(link) }
+                        .onSuccess { c ->
+                            a.settings.characterId = c.id
+                            Log.i(TAG, "Imported ${c.name} (${c.id})${if (c.nsfw) " [18+: shown only with mature text on]" else ""}")
+                        }
+                        .onFailure { Log.w(TAG, "import_url failed: ${it.message}") }
+                }
             }
             if (bool(x, "export_template") == true) {
                 val f = File(app.characters.folder, "template.json.txt")
