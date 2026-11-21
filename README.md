@@ -178,9 +178,17 @@ app/src/main/java/dev/sweitz/veniceglasses/
   ui/ModelPickerActivity.kt       Menu: character, layout, mature switches, read aloud, web search, models
   ui/CharacterPickerActivity.kt   Character list
   ui/WaveformView.kt              Microphone level bars while listening
+  ui/CreditsActivity.kt           Credits & licences screen (data/Credits.kt)
   ui/ConfigActivity.kt            adb-only settings
 app/src/test/                     Unit tests for the parser, filter, history, log, cards, prompts and policy
 ```
+
+## Credits and licences
+
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for what VeniceX3 is built with. The RayNeo
+SDK `.aar` has no stated licence, which is flagged there. [COMMUNITY.md](COMMUNITY.md) credits the
+other RayNeo X3 Pro community projects and says which of them can be reused. The same lists are
+in the app (triple tap → Credits & licences).
 
 ## Notes
 
