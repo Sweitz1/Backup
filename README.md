@@ -27,6 +27,28 @@ Venice or RayNeo.
 - **Mature mode (18+, off by default):** separate switches for mature **text**, **images** and
   **video**. Nothing changes until you confirm you're 18 or older over adb (see below).
 
+## Screenshots
+
+> These are previews rendered from the app's layouts, colors and strings (one eye, 640×480),
+> not captures from the glasses. The avatar is a placeholder: no character art ships with the
+> app. Black is see-through on the glasses.
+
+| Listening | Answer | Character greeting |
+| --- | --- | --- |
+| ![Listening with waveform](docs/screenshots/chat-listening.png) | ![Answer](docs/screenshots/chat-answer.png) | ![Greeting](docs/screenshots/chat-greeting.png) |
+
+| Portrait layout, mature mode on | Assistant (no character) | Menu |
+| --- | --- | --- |
+| ![Portrait layout](docs/screenshots/chat-portrait.png) | ![Assistant](docs/screenshots/chat-assistant.png) | ![Menu](docs/screenshots/menu.png) |
+
+| Characters | Card stores | Credits & licences |
+| --- | --- | --- |
+| ![Characters](docs/screenshots/characters.png) | ![Card stores](docs/screenshots/card-stores.png) | ![Credits](docs/screenshots/credits.png) |
+
+Both eyes, as the glasses show them:
+
+![Both eyes](docs/screenshots/both-eyes.png)
+
 ## Gestures
 
 | Temple gesture | Chat screen | Menu |
